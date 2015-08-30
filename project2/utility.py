@@ -8,3 +8,7 @@ def build_kwargs(dictionary, index):
             kwargs[key] = dictionary[key][index]
 
     return kwargs
+
+def print_output_for_latex(output):
+    for row in output:
+        print '%i & %i & %.2f & %.2f & %.2f \\\\' % tuple(row)

@@ -1,0 +1,249 @@
+\documentclass[conference]{IEEEtran}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{silence}\WarningsOff[latexfont]
+
+\usepackage{amsmath}
+
+\RequirePackage{tikz}[2010/10/13]
+\usetikzlibrary{arrows,automata,calc,intersections,patterns,decorations.pathmorphing,decorations.pathreplacing}
+
+\usepackage{graphicx}
+\usepackage{cite}
+\usepackage{url}
+\usepackage[caption=false,font=footnotesize]{subfig}
+\usepackage[binary-units,per-mode=symbol]{siunitx}
+\sisetup{list-final-separator = {, and }}
+\usepackage{booktabs}
+\usepackage{pifont}
+\usepackage{microtype}
+\usepackage{textcomp}
+\usepackage[american]{babel}
+\usepackage[noabbrev,capitalise]{cleveref}
+\usepackage{xspace}
+\usepackage{hyphenat}
+\usepackage[draft,inline,nomargin,index]{fixme}
+\fxsetup{theme=color}
+\usepackage{grffile}
+\usepackage{xfrac}
+\usepackage{multirow}
+\RequirePackage{xstring}
+\RequirePackage{xparse}
+\RequirePackage[index=true]{acro}
+\NewDocumentCommand\acrodef{mO{#1}mG{}}{\DeclareAcronym{#1}{short={#2}, long={#3}, #4}}
+\NewDocumentCommand\acused{m}{\acuse{#1}}
+\usepackage{upquote}
+
+\acrodef{WSN}{Wireless Sensor Network}
+\acrodef{MANET}{Mobile Ad Hoc Network}
+\acrodef{ROI}{Region of Interest}{short-indefinite={an}, long-plural-form={Regions of Interest}}
+
+\begin{document}
+
+\title{Assignment 1 - SPE}
+
+\author{
+	\IEEEauthorblockN{Quynh Nguyen, Mat. number 166071}
+	\texttt{phamxuanquynh.nguyen@unitn.it}
+}
+
+\maketitle
+
+\acresetall
+
+\section{Introduction}
+\label{sec:introduction}
+We were given a dataset. We were told that the dataset is distributed with the Gamma distribution and those values are interfered by the Gaussian white noise. We will need to estimate the necessary parameters for those 2 distributions, for example: $\alpha, \lambda, \sigma$. In order to do that, we will verify whether samples from dataset are \textit{iid.}. IID is such an important properties because it can help simplify many task. For example, we can estimate the parameters for  then the estimation task can be done by solving a system of equations. And with IID property, then the confidence interval can also be provided for the estimation.
+
+\section{Fundamentals}
+\label{sec:fundamentals}
+
+\subsection{Notation}
+$\mu'_{i}(X) = E[X^{i}]$: the i-th \textbf{raw} moment for X distribution
+
+$\mu_{i}(X) = E[(X - E[X])^{i}]$: the i-th \textbf{central} moment for X distribution
+
+From now on, we use $X$ to refer to Gamma distribution, and $Y$ as the distribution of Gaussian white noise.
+
+I will also use $\beta = \frac{1}{\lambda}$ interchangabily to make it more clear for writing equation.
+
+\subsection{Gamma distribution}
+\subsubsection{Moment-Generating Functions}
+
+From \cite{richard1995}, we have the moment-generating function for gamma distribution \textit{X}
+\begin{equation}
+\label{mgf_gamma}
+M(t) = E[e^{tX}] = {(1 - \beta t)}^{-\alpha}
+\end{equation}
+
+From \eqref{mgf_gamma}, we can calculate the first raw moments. \textit{2-nd} and \textit{3-rd} raw moment follows in the same way. Also the central-moments can be calculated with some few more arithmetic steps. In here, I only specify :
+
+\begin{align}
+\label{1st_raw_moments_gamma}
+\mu'_{1}(X) =  M^{(1)}(0) &= \frac{{(1 - \beta t)}^{-\alpha}}{dt} \\
+&= [-\alpha(1 - \beta t)^{-\alpha - 1} (-\beta))]_{t = 0} = \alpha \beta \\
+\label{2nd_raw_moments_gamma}
+\mu'_{2}(X) = M^{(2)}(0) &= \alpha (\alpha + 1) \beta^2 \\
+\label{3rd_raw_moments_gamma}
+\mu'_{3}(X) = M^{(3)}(0) &= \alpha (\alpha + 1) (\alpha + 2) \beta^3
+\end{align}
+
+Mean of Gamma distribution:
+$\mu'_{1}(X) = \alpha \beta$
+
+Variance of Gamma distribution:
+$\mu_{2}(X) = \mu'_{2}(X) - \mu'_{1}(X)^2 = \alpha \beta^2$
+
+The \textit{3-rd} central moment:
+\begin{align*}
+\mu_{3}(X) &= E[(X - \mu'_{1}(X))^3] \\
+&= \mu'_{3}(X) - 3\mu'_{2}(X) \mu'_{1}(X) + 2 \mu'_{1}(X)^3 \\
+&= 2 \alpha \beta^3
+\end{align*}
+
+\subsection{Gaussian white noise distribution}
+The 3-rd central moment of Gaussian white noise distribution $Y$ is 0. From \cite{gut2005}, we know that all odd raw moment of symmetrical distribution is zero, aka. $\mu'_{1}(Y) = 0$ and $\mu'_{3}(Y) = 0$. Then:
+
+\begin{align*}
+\mu_{3}(Y) = \mu'_{3}(Y) - 3\mu'_{2}(Y) \mu'_{1}(Y) + 2 \mu'_{1}(Y)^3 = 0
+\end{align*}
+
+\subsection{Sum of Independent Random Variables}
+If these distributions $X$ and $Y$ are independent, then we have the following properties \cite{gut2005}. 
+
+\begin{align*}
+\mu'_{1}(X + Y) = \mu'_{1}(X) + \mu'_{1}(Y) \\
+\mu_{2}(X + Y) = \mu_{2}(X) + \mu_{2}(Y) \\
+\mu_{3}(X + Y) = \mu_{3}(X) + \mu_{3}(Y) \\
+\end{align*}
+
+\section{Implementation}
+
+\subsection{Verify that the dataset is iid}
+Firstly, to verify that samples from the dataset are independent, I plot the autocorrelation (now AC for short) value for some portion of the dataset. The graph show such ACs with value almost equal to zero, indicating that there is no time dependent in the data.
+
+Secondly, to verify that the dataset is identically distributed, I use the sliding window technique to divide the dataset into many smaller portions. Then I compute the statistical measures such as mean, variance, skewness, and kurtosis for these partial dataset. Finally, if the variance of those statistical measures above for many partial dataset is not huge, then we can conclude that the data distribution appear to be stable. For example, Table \Cref{iid_table} shows the sample result when splitting the dataset in 2 parts. 
+
+\Cref{iid_table2} show the mean and variance of statistical measures when splitting dataset into 5, 10 chunks.
+
+\begin{table}
+\centering
+\caption{Statistical measures for partial dataset}
+\label{iid_table}
+\begin{tabular}{lcr}
+\toprule
+ & Dataset 1 & Dataset 2 \\
+ \midrule
+Mean & 1.93 & 1.93 \\
+Variance & 1.24 & 1.25 \\
+Skewness & 0.32 & 0.39 \\
+Kutorsis & 4.72 & 5.16 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{table}
+\centering
+\caption{Variance of statistical measures from multiple partial datasets}
+\label{iid_table2}
+\begin{tabular}{lcr}
+\toprule
+ & 5 datasets & 10 datasets \\
+ \midrule
+Mean & 3e-5 & 7e-5 \\
+Variance & 8e-4 & 4e-4 \\
+Skewness & 7e-4 & 1e-3 \\
+Kutorsis & 4e-2 & 3e-2 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Finding parameters}
+With all the background knowledge stated above, we have:
+
+\begin{align}
+\begin{cases}
+\mu'_{1}(Z) = \alpha \beta + 0 \\
+\mu_{2}(Z) = \alpha \beta^2 + \sigma^2 \\
+\mu_{3}(Z) = 2 \alpha \beta^3
+\end{cases}
+\end{align}
+
+We can derive value for all variables in the left-handed side of the equation set. Then it is only a matter of some arithmetic calculation to get numerical solutions. The solution is:
+
+\begin{align*}
+\begin{cases}
+\beta &= \sqrt{\frac{\mu_{3}(Z)}{2\mu'_{1}(Z)}}\\
+\lambda &= \frac{1}{\beta} = 3.215 \\
+\alpha &= \mu'_{1}(Z) \lambda = 6.235 \\
+\sigma &= \sqrt{\mu_{2}(Z) - \alpha \lambda ^ 2} = 0.799
+\end{cases}
+\end{align*}
+
+\subsection{Confidence Intervals}
+The confidence interval $[\theta_1, \theta_2]$ for estimated parameter $\hat{\theta}$ with the confidence level $P_I$ tell us that it has probability $P_I$ of capturing the true $\theta$.
+
+\begin{equation}
+P(\theta_1 \leq \theta \leq \theta_2 | \hat{\theta}) \geq P_I
+\end{equation}
+
+In our case, we want to find the confidence interval for mean value. Our sample size is larger than 30, therefore, we can use the $z-statistic$ with an approximation that the sample standard deviation is also the population standard deviation.
+
+For the confidence interval using Chebychev inequality, I followed the equation given in the lecture (page 50, lecture 5)
+
+Check \Cref{confidence_interval} for the result. And \Cref{pic_ci} show the difference confidence interval calculated by different methods. In general, Chebychev gives a crude estimation for the confidence rather than the Z-statistic.
+
+\begin{table}
+\centering
+\caption{Confidence Interval for Means}
+\label{confidence_interval}
+\begin{tabular}{l|rl|rl}
+\toprule
+Confidence Level & Z-Statistic &  & Chebyshev \\
+ \midrule
+90\% & [-1.6 & 5.5] & [0.3 & 3.6] \\
+95\% & [-3.04 & 6.9] & [0 & 3.8] \\
+99\% & [-9.2 & 13] & [-0.6 & 4.5] \\
+\end{tabular}
+\end{table}
+
+\begin{figure}
+    \centering
+	\caption{Confidence Interval with confidence level at 0.9}
+	\label{pic_ci}
+\end{figure}
+
+
+\section{Evaluation}
+
+\Cref{hist} plots the density function for $Z$ distribution, over the given dataset. We can see that with those parameters, the $Z$ distribution fit the given dataset closely.
+
+\begin{figure}
+    \centering
+	\caption{Histogram and Convolution of Gamma \& Gaussian Distribution}
+	\label{hist}
+\end{figure}
+
+Also, for confidence intervals calculation, Z-statistic also provide a tighter bound than Chebyshev's method.
+
+In summary, when given a dataset, I performed some analysis at first such as plotting the histogram for whole dataset, for part of dataset. I was asked to verify that the dataset is IID, in which I did by looking at autocorrelation graph for different part of dataset. After that, I performed the parameter estimation for 2 distributions Gamma and Gaussian. In the end, the confidence interval for mean was given.
+
+
+\bibliographystyle{IEEEtran}
+\bibliography{references}
+
+\section{Appendix}
+\textbf{Calculating 3rd central moment for Gamma}
+\begin{align*}
+\mu_{3}(X) &= E[(X - \mu'_{1}(X))^3] \\
+&= E[X^3] - 3 E[X^2] \mu'_{1}(X) + 3 E[X] \mu'_{1}(X) ^ 2 - \mu'_{1}(X)^3 \\
+&= \mu'_{3}(X) - 3\mu'_{2}(X) \mu'_{1}(X) + 3 \mu'_{1}(X)^3 - \mu'_{1}(X)^3 \\
+\label{3rd_central_moment_gamma}
+&= \mu'_{3}(X) - 3\mu'_{2}(X) \mu'_{1}(X) + 2 \mu'_{1}(X)^3 \\
+&= \alpha (\alpha + 1) (\alpha + 2) \beta^3 - 3 \alpha (\alpha + 1) \beta^2 \alpha \beta + 2 \alpha^3 \beta^3 \\
+&= (\alpha^3 + 3 \alpha^2 + 2\alpha)\beta^3 - 3 (\alpha^3 + \alpha^2)\beta^3 + 2 \alpha^3 \beta^3 \\
+&= 2 \alpha \beta^3
+\end{align*}
+
+\end{document}

@@ -134,7 +134,7 @@ class ExperimentResult():
                     output.append(temp_row)
 
         # Write to csv file
-        numpy.savetxt('exp_result.csv', output, fmt='%.2f', delimeter=',')
+        numpy.savetxt('exp_result.csv', output, fmt='%.2f', delimiter=',')
         utility.print_output_for_latex(output)
 
 

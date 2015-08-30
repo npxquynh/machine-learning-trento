@@ -12,6 +12,7 @@
 \usepackage{graphicx}
 \usepackage{cite}
 \usepackage{url}
+\usepackage{listings}
 \usepackage[caption=false,font=footnotesize]{subfig}
 \usepackage[binary-units,per-mode=symbol]{siunitx}
 \sisetup{list-final-separator = {, and }}
@@ -35,10 +36,6 @@
 \NewDocumentCommand\acused{m}{\acuse{#1}}
 \usepackage{upquote}
 
-\acrodef{WSN}{Wireless Sensor Network}
-\acrodef{MANET}{Mobile Ad Hoc Network}
-\acrodef{ROI}{Region of Interest}{short-indefinite={an}, long-plural-form={Regions of Interest}}
-
 \begin{document}
 
 \title{Assignment 2 - Machine Learning}
@@ -54,6 +51,134 @@
 
 \section{Introduction}
 \label{sec:introduction}
+This assignment is to compare the performance of three different classification algorithms, namely Naive Bayes, SVM, and Random Forest. module \texttt{sklearn.datasets} is used to randomly generate random a binary classification problem.
+
+\section{Experiment Design}
+\subsection{Notations}
+An \textbf{experiment} contains multiple \textit{repetition} with different dataset. In total, there are 9 datasets, making from the variations in \textit{n\_samples} $[1000, 2000, 5000]$ and \textit{n\_features} $[10, 15, 20]$.
+
+One \textbf{repetition} involves multiple \textit{algorithm comparison} for each portion of training set and test set. The original is divided into 10 different training set and test set with 10-fold cross validation.
+
+One \textbf{algorithm comparison} means \textit{training} the algorithm in consideration with the training set (it can be Naive Bayes, Random Forest or SVM), and then test the trained algorithm with the test set.
+
+\subsection{Randomization}
+The data is created randomly with \texttt{random\_state} 1234.
+
+The 10-fold cross validation is generated with \texttt{random\_state} 1234.
+
+The inner 5-fold cross validation is generated with \texttt{random\_state} 5678.
+
+Those number are picked out of convenient, so that the whole experiment can be repeated.
+
+\subsection{An experiment in detail}
+There are 9 repetitions in total (3 \texttt{different sample size} $\times$ 3 \texttt{different number of features}).
+
+\subsection{Algorithm comparison in detail}
+\begin{itemize}
+\item For \textit{Naive Bayes}, the algorithm is trained one for each training set. Then the parameter obtained from the training is applied directly to the testing set.
+\item For \textit{SVM} and \textit{Random Forest}, there is parameter that we can tune to improve the performance of the classifier. Therefore, for each training set, we perform 5-fold cross validation. The original training set now acts as the \textit{inner} training set and \textit{inner} validation set. \textit{SVM} or \textit{Random Forest} are trained with the \textit{inner} training set, with different parameters. We will select the parameter $\theta$ that output the highest \textit{f1-score}. Finally, $\theta$ is used in the classifier to evaluate the test set.
+\end{itemize}
+
+\section{Result}
+\textbf{Metrics in consideration}:
+\begin{itemize}
+\item Accuracy.
+\item F1 score
+\item Area under curve AUC.
+\end{itemize}
+
+\subsection{Explanation}
+The result from \textit{an algorithm comparison} contains the metrics for each run with 1 training set and test set resulting from 10-fold cross validation from the original dataset.
+
+The result from \textit{a repetition} is the average of the metrics from 10 runs of \textit{algorithm comparison}.
+
+The result from \textit{an experiment} is the average of the result from a repetition. The result can be grouped by:
+
+\begin{itemize}
+\item Changing \texttt{n\_samples}, keeping \texttt{n\_features} constant: when we want to evaluate whether increasing the sample size would increase the performance of those classifiers.
+\item Changing \texttt{n\_features}, keeping \texttt{n\_samples} constant: the result will show how well the algorithm perform with small/large number of features.
+\item Average the result overall values of \texttt{n\_features} and \texttt{n\_samples}: we would have a general look on how good each algorithm perform across different dataset.
+\end{itemize}
+
+\subsection{Experiment Result}
+\subsubsection*{Result of one run in algorithm comparison}
+In one experiment, we have in total 90 algorithm comparison runs. Here I only show result from on abitrary run in \cref{tab:result_algo_comparison}
+
+\begin{table}[h]
+\centering
+\caption{Results per-fold for dataset with n\_samples=1000, n\_features=10}
+\label{tab:result_algo_comparison}
+\begin{tabular}{l|l}
+\midrule
+\textbf{Naive Bayes} & \\
+Accuracy & [0.92, 0.94, 0.96, 0.91, 0.97, 0.94, 0.96, 0.9, 0.96, 0.94] \\
+F1-score & [0.91, 0.94, 0.96, 0.90, 0.97, 0.94, 0.96, 0.91, 0.96, 0.93] \\
+AUC &      [0.92, 0.94, 0.96, 0.91, 0.97, 0.94, 0.96, 0.90, 0.96, 0.94] \\
+\midrule
+\textbf{SVM} & \\
+Accurarcy & [0.75, 0.79, 0.96, 0.79, 0.71, 0.84, 0.84, 0.7, 0.65, 0.76] \\
+F1-score & [0.78, 0.75, 0.96, 0.81, 0.63, 0.82, 0.82, 0.63, 0.52, 0.79] \\
+AUC & [0.777, 0.80, 0.96, 0.80, 0.73, 0.84, 0.84, 0.73, 0.68, 0.78] \\
+\midrule
+\textbf{Random Forest} & \\
+Accuracy & [0.92, 0.95, 0.96, 0.91, 0.98, 0.94, 0.97, 0.92, 0.97, 0.96] \\
+F1-score & [0.91, 0.95, 0.96, 0.90, 0.98, 0.94, 0.97, 0.93, 0.97, 0.96] \\
+AUC & [0.92, 0.95, 0.96, 0.91, 0.98, 0.94, 0.97, 0.91, 0.97, 0.96] \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsubsection*{Result of one repetition}
+\cref{tab:result_repetition} shows the average of F1-score from all the repetitions during an experiment. Each row in the table is the average of the running the algorithm with 10-fold cross validation.
+
+I choose F1-score because F1-score put weight on both precision and recall. We can have a really high accuracy, but that high accuracy does not guarantee that the algorithm we are considering is better than some other algorithms.
+
+\begin{table}[h]
+\centering
+\caption{F1-score from repetition with different dataset}
+\label{tab:result_repetition}
+\begin{tabular}{l|l|c|c|c}
+n\_samples & n\_features & Naive Bayes & SVM & Random Forest \\
+\toprule
+1000 & 10 & 0.94 & 0.75 & 0.94 \\ 
+1000 & 15 & 0.94 & 0.46 & 0.95 \\ 
+1000 & 20 & 0.94 & 0.35 & 0.95 \\ 
+2000 & 10 & 0.95 & 0.96 & 0.98 \\ 
+2000 & 15 & 0.95 & 0.95 & 0.98 \\ 
+2000 & 20 & 0.95 & 0.81 & 0.98 \\ 
+5000 & 10 & 0.83 & 0.84 & 0.88 \\ 
+5000 & 15 & 0.83 & 0.84 & 0.89 \\ 
+5000 & 20 & 0.83 & 0.84 & 0.88 \\ 
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsubsection*{Result of an experiment}
+We can also look at \cref{tab:result_repetition} to analyze the whole experiment.
+
+
+\section{Evaluation}
+Overall, Random Forest achieves the best performance in all repetitions. Naive Bayes follow with the consistent high performance (F1-score is always above 83\% or more). SVM performance suffers when the sample size is small (n_samples = 1000). And for small sample size, increasing the number of features decreases the  the performance of SVM drastically.
+
+
+\section{How to run the code}
+There are 3 type of experiments that you can do. They are classified as:
+\lstset{
+	basicstyle=\ttfamily\color{black}
+}
+\begin{itemize}
+\item short: \lstinline{n_samples = [1000], n_features=[10]}
+\item medium: \lstinline{n_samples = [1000, 2000], n_features=[10, 15]}
+\item long: \lstinline{n_samples = [1000, 2000, 5000], n_features=[10, 15, 20]}
+\end{itemize}
+
+These commands below will choose the type of experiment that we can run:
+\begin{lstlisting}
+make run % short run
+make shortrun % short run
+make mediumrun % medium run
+make longrun % long run
+\end{lstlisting}
 
 
 
